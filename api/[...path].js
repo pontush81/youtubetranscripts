@@ -197,9 +197,10 @@ async function handleBulkPlaylist(req, res) {
 // ---------- simple router (one file for Vercel) ----------
 export default async function handler(req, res) {
   const { url } = req;
-  if (url.startsWith("/api/transcript")) return handleTranscript(req, res);
-  if (url.startsWith("/api/bulk/channel")) return handleBulkChannel(req, res);
-  if (url.startsWith("/api/bulk/playlist")) return handleBulkPlaylist(req, res);
+  // Support both /api/transcript and /transcript patterns
+  if (url.includes("/transcript") && !url.includes("/bulk")) return handleTranscript(req, res);
+  if (url.includes("/bulk/channel")) return handleBulkChannel(req, res);
+  if (url.includes("/bulk/playlist")) return handleBulkPlaylist(req, res);
   return ok({ ok: true, routes: ["/api/transcript", "/api/bulk/channel", "/api/bulk/playlist"] }, res);
 }
 

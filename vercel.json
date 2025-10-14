@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/api/transcript", "destination": "/api/index.js" },
-    { "source": "/api/bulk/channel", "destination": "/api/index.js" },
-    { "source": "/api/bulk/playlist", "destination": "/api/index.js" }
-  ]
-}
-
