@@ -1,0 +1,9 @@
+{
+  "functions": { "api/index.js": { "runtime": "nodejs18.x" } },
+  "routes": [
+    { "src": "/api/transcript", "dest": "/api/index.js" },
+    { "src": "/api/bulk/channel", "dest": "/api/index.js" },
+    { "src": "/api/bulk/playlist", "dest": "/api/index.js" }
+  ]
+}
+
