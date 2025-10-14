@@ -25,32 +25,74 @@ function vttToPlain(vtt) {
 }
 
 async function fetchTranscriptText(videoId, lang = "en") {
+  // Strategy: Try youtube-transcript first (free), fallback to RapidAPI if needed
+  
+  // Method 1: Try youtube-transcript library (free, works most of the time)
   try {
-    // Use youtube-transcript library which handles all the complexity
     const transcript = await YoutubeTranscript.fetchTranscript(videoId, {
       lang: lang,
     });
     
-    if (!transcript || transcript.length === 0) {
-      return null;
+    if (transcript && transcript.length > 0) {
+      const text = transcript.map(item => item.text).join(' ');
+      return { text, lang, source: 'youtube-transcript' };
     }
-    
-    // Convert to plain text
-    const text = transcript.map(item => item.text).join(' ');
-    return { text, lang };
   } catch (error) {
-    // Try without language specification (gets default/auto-generated)
+    // Try without language specification
     try {
       const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-      if (!transcript || transcript.length === 0) {
-        return null;
+      if (transcript && transcript.length > 0) {
+        const text = transcript.map(item => item.text).join(' ');
+        return { text, lang: 'auto', source: 'youtube-transcript' };
       }
-      const text = transcript.map(item => item.text).join(' ');
-      return { text, lang: 'auto' };
     } catch (e) {
-      return null;
+      // Continue to fallback
     }
   }
+  
+  // Method 2: Fallback to RapidAPI (paid but reliable) if RAPIDAPI_KEY is set
+  const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+  const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST || 'youtube-transcript3.p.rapidapi.com';
+  
+  if (RAPIDAPI_KEY) {
+    try {
+      const response = await fetch(
+        `https://${RAPIDAPI_HOST}/api/transcript?videoId=${videoId}`,
+        {
+          headers: {
+            'X-RapidAPI-Key': RAPIDAPI_KEY,
+            'X-RapidAPI-Host': RAPIDAPI_HOST,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.transcript || data.text) {
+          // Handle different response formats
+          let segments = [];
+          if (Array.isArray(data.transcript)) {
+            segments = data.transcript;
+          } else if (Array.isArray(data)) {
+            segments = data;
+          }
+          
+          if (segments.length > 0) {
+            const text = segments.map(s => s.text || '').join(' ');
+            if (text.trim()) {
+              return { text: text.trim(), lang, source: 'rapidapi' };
+            }
+          } else if (typeof data.text === 'string' && data.text.trim()) {
+            return { text: data.text.trim(), lang, source: 'rapidapi' };
+          }
+        }
+      }
+    } catch (e) {
+      // Fallback failed too
+    }
+  }
+  
+  return null;
 }
 
 // ---------- YouTube Data API helpers ----------
@@ -133,7 +175,8 @@ async function handleTranscript(req, res) {
     language: result.lang,
     text: result.text,
     url: `https://www.youtube.com/watch?v=${videoId}`,
-    transcriptFound: true
+    transcriptFound: true,
+    source: result.source || 'unknown'
   };
 
   return ok(data, res);
