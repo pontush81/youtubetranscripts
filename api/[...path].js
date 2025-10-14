@@ -23,23 +23,126 @@ function vttToPlain(vtt) {
     .trim();
 }
 
+async function getCaptionTracksFromVideo(videoId) {
+  // Fetch video page to extract caption tracks
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept-Language': 'en-US,en;q=0.9'
+  };
+  
+  try {
+    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const response = await fetch(videoUrl, { headers });
+    const html = await response.text();
+    
+    // Find the captionTracks array
+    const startMarker = '"captionTracks":[';
+    const startIndex = html.indexOf(startMarker);
+    if (startIndex === -1) return null;
+    
+    // Extract the JSON array by counting brackets
+    let depth = 0;
+    let endIndex = startIndex + startMarker.length - 1; // Start at the [
+    
+    for (let i = endIndex; i < html.length; i++) {
+      if (html[i] === '[') depth++;
+      if (html[i] === ']') {
+        depth--;
+        if (depth === 0) {
+          endIndex = i + 1;
+          break;
+        }
+      }
+    }
+    
+    let tracksJson = html.substring(startIndex + startMarker.length - 1, endIndex);
+    
+    // Clean up the JSON - decode unicode escapes
+    tracksJson = tracksJson.replace(/\\u0026/g, '&');
+    
+    const tracks = JSON.parse(tracksJson);
+    return tracks;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function fetchWithRetry(url, headers, maxRetries = 2) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const r = await fetch(url, { headers });
+      // If rate limited, wait and retry
+      if (r.status === 429 && attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        continue;
+      }
+      return r;
+    } catch (e) {
+      if (attempt === maxRetries) throw e;
+      await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 async function fetchTimedTextVTT(videoId, lang = "en") {
-  // Try multiple variants (lang, lang as ISO-2, with/without ASR)
+  // First try to get caption tracks from video page
+  const captionTracks = await getCaptionTracksFromVideo(videoId);
+  
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept': 'text/vtt,*/*',
+    'Referer': `https://www.youtube.com/watch?v=${videoId}`
+  };
+  
+  // If we found caption tracks, use those URLs
+  if (captionTracks && captionTracks.length > 0) {
+    const langCode = lang.split("-")[0];
+    // Find matching language track
+    const track = captionTracks.find(t => 
+      t.languageCode === lang || t.languageCode === langCode || t.languageCode === 'en'
+    ) || captionTracks[0];
+    
+    if (track && track.baseUrl) {
+      try {
+        const url = track.baseUrl.includes('fmt=vtt') ? track.baseUrl : track.baseUrl + '&fmt=vtt';
+        const r = await fetchWithRetry(url, headers);
+        if (r.ok) {
+          const text = await r.text();
+          if (text && /WEBVTT/.test(text) && !text.includes('<html>')) {
+            return { vtt: text, langTried: track.languageCode || lang };
+          }
+        }
+      } catch (e) {
+        // Fall through to backup method
+      }
+    }
+  }
+  
+  // Fallback to direct API calls
   const base = "https://www.youtube.com/api/timedtext";
   const langs = [lang, lang.split("-")[0]].filter(Boolean);
   const urls = [];
+  
   for (const L of langs) {
     urls.push(`${base}?fmt=vtt&lang=${encodeURIComponent(L)}&v=${encodeURIComponent(videoId)}`);
     urls.push(`${base}?fmt=vtt&lang=${encodeURIComponent(L)}&kind=asr&v=${encodeURIComponent(videoId)}`);
   }
+  
   for (const url of urls) {
-    const r = await fetch(url);
-    if (!r.ok) continue;
-    const text = await r.text();
-    if (text && /WEBVTT/.test(text) && !/kind="asr" not supported/i.test(text)) {
-      return { vtt: text, langTried: url.match(/lang=([^&]+)/)?.[1] ?? lang };
+    try {
+      const r = await fetchWithRetry(url, headers, 1); // Fewer retries for fallback
+      if (!r.ok) continue;
+      const text = await r.text();
+      if (text && /WEBVTT/.test(text) && !/kind="asr" not supported/i.test(text) && !text.includes('<html>')) {
+        return { vtt: text, langTried: url.match(/lang=([^&]+)/)?.[1] ?? lang };
+      }
+    } catch (e) {
+      continue;
     }
   }
+  
   return null;
 }
 
