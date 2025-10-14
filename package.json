@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "youtube-transcript": "^1.2.1"
   }
 }
-
