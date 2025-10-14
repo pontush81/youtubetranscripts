@@ -2,6 +2,14 @@
 
 Ett enkelt API för att hämta YouTube-transkript utan tunga bibliotek.
 
+## 🌐 Live API
+
+**Production URL:** https://yt-transcript-lite.vercel.app
+
+**GitHub Repo:** https://github.com/pontush81/youtubetranscripts
+
+API:et är live och kan användas direkt!
+
 ## 📁 Projektstruktur
 
 ```
@@ -57,9 +65,14 @@ GET /api/transcript?videoId=VIDEO_ID&lang=en&mode=plain
 - `lang` (optional): Språkkod, default: "en"
 - `mode` (optional): "plain" eller "vtt", default: "plain"
 
-**Exempel:**
+**Exempel (Lokalt):**
 ```bash
 curl "http://localhost:3000/api/transcript?videoId=dQw4w9WgXcQ"
+```
+
+**Exempel (Live):**
+```bash
+curl "https://yt-transcript-lite.vercel.app/api/transcript?videoId=dQw4w9WgXcQ"
 ```
 
 **Response:**
@@ -83,9 +96,14 @@ GET /api/bulk/channel?handle=CHANNEL_HANDLE&max=50&lang=en&mode=plain
 - `lang` (optional): Språkkod, default: "en"
 - `mode` (optional): "plain" eller "vtt", default: "plain"
 
-**Exempel:**
+**Exempel (Lokalt):**
 ```bash
 curl "http://localhost:3000/api/bulk/channel?handle=mkbhd&max=5"
+```
+
+**Exempel (Live):**
+```bash
+curl "https://yt-transcript-lite.vercel.app/api/bulk/channel?handle=fireship&max=5"
 ```
 
 **Response:**
@@ -117,9 +135,14 @@ GET /api/bulk/playlist?list=PLAYLIST_ID&max=50&lang=en&mode=plain
 - `lang` (optional): Språkkod, default: "en"
 - `mode` (optional): "plain" eller "vtt", default: "plain"
 
-**Exempel:**
+**Exempel (Lokalt):**
 ```bash
 curl "http://localhost:3000/api/bulk/playlist?list=PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf&max=5"
+```
+
+**Exempel (Live):**
+```bash
+curl "https://yt-transcript-lite.vercel.app/api/bulk/playlist?list=PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf&max=5"
 ```
 
 ## 🌐 Deployment till Vercel
@@ -166,5 +189,25 @@ curl "http://localhost:3000/api/bulk/playlist?list=PLrAXtmErZgOeiKm4sgNOknGvNjby
 
 ## ✅ Testat och Fungerar
 
-Projektet är nu testat och igång! Servern kör på `http://localhost:3000` och alla tre endpoints fungerar.
+Projektet är live och fungerar! 
+
+- **Live Production API:** https://yt-transcript-lite.vercel.app
+- **GitHub Repo:** https://github.com/pontush81/youtubetranscripts
+- **Lokal Server:** http://localhost:3000 (när du kör lokalt)
+
+Alla tre endpoints är testade och fungerar korrekt!
+
+## 🔄 Uppdatera Projektet
+
+När du gör ändringar:
+
+```bash
+cd ~/yt-transcript-lite
+# Gör dina ändringar...
+git add .
+git commit -m "Din commit-message"
+git push
+```
+
+Vercel deployar automatiskt vid varje push till GitHub! 🚀
 
