@@ -107,7 +107,17 @@ async function handleTranscript(req, res) {
   if (!videoId) return bad(res, 400, "Missing videoId");
 
   const vtt = await fetchTimedTextVTT(videoId, lang);
-  if (!vtt) return bad(res, 404, "No transcript found for requested language");
+  if (!vtt) {
+    // Return 200 with error info so n8n doesn't throw exception
+    return ok({
+      videoId,
+      language: lang,
+      text: "",
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+      error: "No transcript found for requested language",
+      transcriptFound: false
+    }, res);
+  }
 
   const data = {
     videoId,
@@ -115,10 +125,11 @@ async function handleTranscript(req, res) {
     vtt: vtt.vtt,
     text: vttToPlain(vtt.vtt),
     url: `https://www.youtube.com/watch?v=${videoId}`,
+    transcriptFound: true
   };
 
-  if (mode === "vtt") return ok(pick(data, ["videoId", "language", "vtt", "url"]), res);
-  return ok(pick(data, ["videoId", "language", "text", "url"]), res);
+  if (mode === "vtt") return ok(pick(data, ["videoId", "language", "vtt", "url", "transcriptFound"]), res);
+  return ok(pick(data, ["videoId", "language", "text", "url", "transcriptFound"]), res);
 }
 
 async function handleBulkChannel(req, res) {
