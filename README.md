@@ -32,12 +32,31 @@ npm install
 
 ## 🔑 Konfiguration
 
-Din YouTube API-nyckel finns redan i `.env.local`:
-```
+### Miljövariabler i `.env.local`:
+
+```bash
+# YouTube Data API (för kanal/playlist metadata)
 YOUTUBE_API_KEY=AIzaSyDU9cd-URQ1riHtyNbyLqGMd0g6cT31ayc
+
+# Optional: RapidAPI Fallback (för bättre reliability)
+RAPIDAPI_KEY=8a698f9fb3mshf593cb284171c0bp143826jsn1633febd00a6
+RAPIDAPI_HOST=youtube-transcript3.p.rapidapi.com
 ```
 
-**OBS:** Kom ihåg att byta nyckel när du vill!
+**OBS:** Kom ihåg att byta nycklar när du vill!
+
+### Hybrid Transcript Strategy 🚀
+
+API:et använder en smart **två-stegs strategi** rekommenderad av Perplexity AI:
+
+1. **Primär:** `youtube-transcript` npm library (gratis, fungerar oftast)
+2. **Fallback:** RapidAPI (betald, hög reliability) - endast om RAPIDAPI_KEY är satt
+
+**Fördelar:**
+- ✅ Gratis för majoriteten av requests
+- ✅ Betalar bara för svåra fall
+- ✅ Hög success-rate
+- ✅ Automatisk fallback vid YouTube rate-limiting
 
 ## 💻 Kör Lokalt
 
