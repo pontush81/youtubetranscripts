@@ -36,14 +36,14 @@ npm install
 
 ```bash
 # YouTube Data API (för kanal/playlist metadata)
-YOUTUBE_API_KEY=AIzaSyDU9cd-URQ1riHtyNbyLqGMd0g6cT31ayc
+YOUTUBE_API_KEY=your-youtube-api-key-here
 
 # Optional: RapidAPI Fallback (för bättre reliability)
-RAPIDAPI_KEY=8a698f9fb3mshf593cb284171c0bp143826jsn1633febd00a6
+RAPIDAPI_KEY=your-rapidapi-key-here
 RAPIDAPI_HOST=youtube-transcript3.p.rapidapi.com
 ```
 
-**OBS:** Kom ihåg att byta nycklar när du vill!
+**🔒 VIKTIGT:** Håll dina API-nycklar hemliga! Lägg dem i `.env.local` (som är i .gitignore).
 
 ### Hybrid Transcript Strategy 🚀
 
@@ -62,13 +62,15 @@ API:et använder en smart **två-stegs strategi** rekommenderad av Perplexity AI
 
 ### Alternativ 1: Med Node.js (Rekommenderad för snabb testning)
 ```bash
-YOUTUBE_API_KEY=AIzaSyDU9cd-URQ1riHtyNbyLqGMd0g6cT31ayc node server.js
+node server.js
 ```
 
 ### Alternativ 2: Med Vercel Dev (För deployment-testning)
 ```bash
-YOUTUBE_API_KEY=AIzaSyDU9cd-URQ1riHtyNbyLqGMd0g6cT31ayc npx vercel dev
+npx vercel dev
 ```
+
+**Miljövariabler läses automatiskt från `.env.local`**
 
 Servern kommer att köra på `http://localhost:3000`
 
